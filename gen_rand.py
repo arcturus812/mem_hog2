@@ -3,6 +3,8 @@ import sys
 import random
 import re
 
+random.seed(1827319248192491212938)
+
 def convert_to_bytes(size_str):
     match = re.match(r'^(\d+)\s*(B|KB|MB|GB)?$', size_str, re.IGNORECASE)
     if not match:
