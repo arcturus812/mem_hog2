@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
                 rand_dat_mem_size = convert_to_bytes(size_str);
                 rand_dat_max_idx = rand_dat_mem_size/sizeof(int); // constraint.
                 printf("target memory_size of rand_idx file(%s) is %llu byte\n", file_name, rand_dat_mem_size);
-                printf("rand_memory_max_idx:%llu\n", rand_dat_max_idx);
+                /* printf("rand_memory_max_idx:%llu\n", rand_dat_max_idx); */
 
                 // init random idx
                 rand_idx = (int*)malloc(rand_num * sizeof(int));
@@ -147,17 +147,41 @@ int main(int argc, char* argv[]) {
     int seq_num = (int)(num_int * seq_rate);
     int ran_num = num_int - seq_num;
 
+    printf("num_iter:%d\n", num_iter);
+    printf("num_ran_idx: %lld\tsize: %lld byte\n", rand_dat_max_idx, rand_dat_max_idx*4);
+    printf("num_seq_int: %d\tsize: %d byte\n", seq_num, seq_num*4);
+    printf("num_ran_int: %d\tsize: %d byte\n", ran_num, ran_num*4);
+
     if(ran_num != 0){
         if(ran_num < rand_dat_max_idx){
             printf("target random memory's max index(%d) is less than randidx~.dat file's one(%lld)\n", ran_num, rand_dat_max_idx);
             printf("it could occur index overflow\n");
             printf("generate randidx~.dat file that smaller or same with %d byte\n", ran_num * 4);
             return 1;
+        }else if(len_of_rand_dat < ran_num){
+            // TODO realloc
+            int len_compensation = ran_num - len_of_rand_dat;
+            int index_size = 0;
+            len_compensation += (len_of_rand_dat - (len_compensation % len_of_rand_dat)) % len_of_rand_dat;
+            index_size = len_of_rand_dat + len_compensation;
+            int *new_rand_idx = realloc(rand_idx, index_size*sizeof(int));
+            rand_idx = new_rand_idx;
+            printf("number of rand_idx(%d) is short for ran_num(%d)\n", len_of_rand_dat, ran_num);
+            printf("expand rand_idx, %d + %d = %d\n", len_of_rand_dat, len_compensation, index_size);
+            for(int i = 1; i< index_size/len_of_rand_dat; i++){
+                for(int j = 0;j<len_of_rand_dat;j++){
+                    rand_idx[(i*len_of_rand_dat)+j] = rand_idx[j];
+                }
+            }
+            len_of_rand_dat = index_size; //update
+
+        }else{
+            printf("index overflow check passed\n");
+            printf("※However, if the target memory size of the random index file is much\n");
+            printf("smaller than the random memory size to be actually accessed, only\n");
+            printf("part of the random memory may be accessed.\n");
         }
     }
-    printf("num_iter:%d\n", num_iter);
-    printf("num_seq_int: %d\tsize: %d byte\n", seq_num, seq_num*4);
-    printf("num_ran_int: %d\tsize: %d byte\n", ran_num, ran_num*4);
 
     int* seq_mem = (int*)malloc(seq_num * sizeof(int));
     int* ran_mem = (int*)malloc(ran_num * sizeof(int));

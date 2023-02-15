@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS =
+CFLAGS = -g
 LDFLAGS = -static
 
 mem_acc: mem_acc.o
